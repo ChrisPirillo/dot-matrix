@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Primary SEO Meta Tags -->
+    <title>Dot Matrix - Generative Typography & Bitmap Display Art</title>
+    <meta name="description" content="Dot Matrix is an interactive 5x7 bitmap generative typography engine. Create custom digital art with adjustable geometry, aesthetics, and real-time effects.">
+    <meta name="keywords" content="dot matrix, generative art, typography, bitmap font, pixel art, creative coding, web arcade, digital display">
+    <meta name="author" content="Chris Pirillo">
+    <link rel="canonical" href="https://pirillo.com/arcade/dot-matrix.html">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://pirillo.com/arcade/dot-matrix.html">
+    <meta property="og:title" content="Dot Matrix - Generative Typography Art">
+    <meta property="og:description" content="An interactive generative typography engine for creating 5x7 bitmap art. Adjust aesthetics, geometry, and effects in real-time.">
+    <meta property="og:image" content="https://pirillo.com/arcade/images/dot-matrix.png">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@ChrisPirillo">
+    <meta name="twitter:creator" content="@ChrisPirillo">
+    <meta name="twitter:url" content="https://pirillo.com/arcade/dot-matrix.html">
+    <meta name="twitter:title" content="Dot Matrix - Generative Typography Art">
+    <meta name="twitter:description" content="Create custom digital bitmap art with this interactive generative typography engine.">
+    <meta name="twitter:image" content="https://pirillo.com/arcade/images/dot-matrix.png">
+
+    <!-- Performance: Resource Hints -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+
+    <!-- Analytics: Google Tag Manager -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1CQ4D3VQ3L"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-1CQ4D3VQ3L');
+    </script>
+
+    <!-- Structured Data: JSON-LD -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Dot Matrix",
+      "url": "https://pirillo.com/arcade/dot-matrix.html",
+      "image": "https://pirillo.com/arcade/images/dot-matrix.png",
+      "description": "An interactive 5x7 bitmap generative typography engine and digital art tool.",
+      "applicationCategory": "DesignApplication",
+      "operatingSystem": "Any",
+      "author": {
+        "@type": "Person",
+        "name": "Chris Pirillo",
+        "url": "https://pirillo.com/"
+      }
+    }
+    </script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Optimized Font Loading */
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        :root {
+            --bg-color: #050505;
+            --accent-color: #00ffcc;
+            --panel-bg: rgba(15, 15, 15, 0.95);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: #e5e5e5;
+            font-family: 'JetBrains Mono', monospace;
+            overflow: hidden;
+            margin: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        /* Canvas Wrapper - Fixed sizing to prevent Layout Shift */
+        #canvas-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            transition: opacity 0.3s ease-in-out;
+            opacity: 1;
+            z-index: 1;
+        }
+
+        /* Keyboard Hint */
+        .keyboard-hint {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255,255,255,0.08);
+            font-size: 2vw;
+            font-weight: 700;
+            pointer-events: none;
+            text-transform: uppercase;
+            white-space: nowrap;
+            z-index: 0;
+            text-align: center;
+            display: none;
+        }
+
+        /* Menu Button */
+        #menu-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            width: 44px;
+            height: 44px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.2);
+            backdrop-filter: blur(4px);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        #menu-btn:hover { background: rgba(255,255,255,0.1); }
+        #menu-btn span {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background-color: white;
+            transition: all 0.3s ease;
+        }
+        #menu-btn.active span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
+        #menu-btn.active span:nth-child(2) { opacity: 0; }
+        #menu-btn.active span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+
+        /* Config Menu */
+        #config-menu {
+            position: fixed;
+            top: 0;
+            right: 0;
+            height: 100%;
+            width: 340px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px);
+            z-index: 90;
+            transform: translateX(100%);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            border-left: 1px solid rgba(255,255,255,0.1);
+            box-shadow: -10px 0 40px rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+        }
+        #config-menu.open { transform: translateX(0); }
+
+        /* Menu Header (Sticky) */
+        .menu-header {
+            padding: 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--panel-bg);
+            flex-shrink: 0;
+        }
+        .menu-title { font-size: 0.9rem; font-weight: 700; letter-spacing: 1px; color: white; }
+
+        /* Scrollable Content */
+        .menu-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 24px;
+            padding-bottom: 100px;
+        }
+        
+        /* Custom Scrollbar */
+        .menu-content::-webkit-scrollbar { width: 4px; }
+        .menu-content::-webkit-scrollbar-track { background: transparent; }
+        .menu-content::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+
+        /* Controls */
+        .control-section {
+            margin-bottom: 28px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 20px;
+        }
+        .control-section h3 {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #555;
+            margin-bottom: 16px;
+            font-weight: 700;
+        }
+
+        .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .label { font-size: 0.75rem; color: #bbb; }
+        .value { font-size: 0.7rem; color: var(--accent-color); font-family: monospace; }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #2a2a2a;
+            border-radius: 2px;
+            outline: none;
+            margin: 8px 0 20px 0;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: #e5e5e5;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+            border: 2px solid #000;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); background: var(--accent-color); }
+
+        select {
+            background: #1a1a1a;
+            color: white;
+            font-size: 0.75rem;
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid #333;
+            outline: none;
+            width: 120px;
+        }
+
+        input[type="checkbox"] {
+            accent-color: var(--accent-color);
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.02);
+            color: #ccc;
+            font-family: inherit;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        .btn:hover { background: white; color: black; border-color: white; }
+        .btn-accent { border-color: var(--accent-color); color: var(--accent-color); }
+        .btn-accent:hover { background: var(--accent-color); color: black; }
+        .btn-sm { font-size: 0.7rem; padding: 8px; text-transform: none; letter-spacing: 0; color: #666; border-color: transparent; }
+        .btn-sm:hover { background: transparent; color: #aaa; text-decoration: underline; }
+
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 24px;
+            height: 24px;
+            background: none;
+            cursor: pointer;
+            padding: 0;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"]::-webkit-color-swatch { border: 1px solid #444; border-radius: 4px; }
+
+        #hidden-input { position: absolute; top: -9999px; left: -9999px; opacity: 0; }
+    </style>
+</head>
+<body>
+
+    <main id="canvas-wrapper">
+        <canvas id="main-canvas" aria-label="Generative dot matrix art display"></canvas>
+    </main>
+
+    <div id="hint" class="keyboard-hint" aria-hidden="true">
+        <div>START TYPING</div>
+        <div style="font-size: 0.9rem; margin-top: 1rem; font-weight: 400; opacity: 0.5;">CLICK CANVAS TO RANDOMIZE</div>
+    </div>
+
+    <!-- Hidden Input for text capture with label for screen readers -->
+    <label for="hidden-input" class="sr-only">Type to generate art</label>
+    <input type="text" id="hidden-input" autocomplete="off" spellcheck="false" value="TYPE HERE">
+
+    <!-- Menu Toggle -->
+    <header>
+        <nav id="menu-btn" onclick="toggleMenu()" role="button" aria-label="Toggle configuration menu" aria-expanded="false">
+            <span></span>
+            <span></span>
+            <span></span>
+        </nav>
+    </header>
+
+    <!-- Settings Menu -->
+    <aside id="config-menu" aria-label="Settings and Customization">
+        <div class="menu-header">
+            <h2 class="menu-title">CONFIGURATION</h2>
+            <div style="width: 24px;"></div> 
+        </div>
+
+        <div class="menu-content">
+            <!-- Style Section -->
+            <section class="control-section">
+                <h3>Aesthetics</h3>
+                <div class="row">
+                    <span class="label">Primary Color</span>
+                    <input type="color" id="ctrl-color" value="#00ffcc" aria-label="Change primary color">
+                </div>
+                <div class="row">
+                    <span class="label">Background</span>
+                    <input type="color" id="ctrl-bg" value="#050505" aria-label="Change background color">
+                </div>
+                <div class="row">
+                    <span class="label">Shape</span>
+                    <select id="ctrl-shape" aria-label="Select dot shape">
+                        <option value="circle">Circle</option>
+                        <option value="square">Square</option>
+                        <option value="diamond">Diamond</option>
+                        <option value="triangle">Triangle</option>
+                        <option value="pentagon">Pentagon</option>
+                        <option value="hexagon">Hexagon</option>
+                        <option value="octagon">Octagon</option>
+                        <option value="cross">Cross</option>
+                        <option value="x">X-Shape</option>
+                        <option value="plus">Plus</option>
+                        <option value="ring">Ring</option>
+                        <option value="star">Star</option>
+                        <option value="heart">Heart</option>
+                    </select>
+                </div>
+            </section>
+
+            <!-- Geometry Section -->
+            <section class="control-section">
+                <h3>Geometry</h3>
+                
+                <div class="row"><span class="label">Alignment</span> 
+                    <select id="ctrl-align" style="width: 90px;" aria-label="Change text alignment">
+                        <option value="left">Left</option>
+                        <option value="center">Center</option>
+                        <option value="right">Right</option>
+                        <option value="justify">Justify</option>
+                    </select>
+                </div>
+
+                <div class="row"><span class="label">Layout Grid Size</span> <span class="value" id="val-size">8</span></div>
+                <input type="range" id="ctrl-size" min="4" max="40" value="8" aria-label="Adjust grid size">
+
+                <div class="row"><span class="label">Point Thickness</span> <span class="value" id="val-pt-scale">1.0x</span></div>
+                <input type="range" id="ctrl-pt-scale" min="0.1" max="2.0" step="0.1" value="1.0" aria-label="Adjust point thickness">
+
+                <div class="row"><span class="label">Spacing</span> <span class="value" id="val-spacing">3</span></div>
+                <input type="range" id="ctrl-spacing" min="0" max="25" value="3" aria-label="Adjust point spacing">
+
+                <div class="row"><span class="label">Roundness</span> <span class="value" id="val-round">0</span></div>
+                <input type="range" id="ctrl-round" min="0" max="100" value="0" aria-label="Adjust shape roundness">
+            </section>
+
+            <!-- Effects Section -->
+            <section class="control-section">
+                <h3>Effects</h3>
+                
+                <div class="row">
+                    <span class="label">Outline Mode</span>
+                    <input type="checkbox" id="ctrl-outline" aria-label="Toggle outline mode">
+                </div>
+
+                <div class="row"><span class="label">Line Thickness</span> <span class="value" id="val-thickness">2.0</span></div>
+                <input type="range" id="ctrl-thickness" min="1" max="10" step="0.5" value="2" aria-label="Adjust line thickness">
+                
+                <div class="row"><span class="label">Glow Intensity</span> <span class="value" id="val-glow">15</span></div>
+                <input type="range" id="ctrl-glow" min="0" max="60" value="15" aria-label="Adjust glow intensity">
+
+                <div class="row"><span class="label">Grid Opacity</span> <span class="value" id="val-grid">10%</span></div>
+                <input type="range" id="ctrl-grid" min="0" max="1.0" step="0.05" value="0.1" aria-label="Adjust grid opacity">
+            </section>
+
+            <!-- Auto/System -->
+            <section class="control-section">
+                <h3>System</h3>
+                <div class="row">
+                    <span class="label">Auto-Randomize</span>
+                    <input type="checkbox" id="ctrl-auto" aria-label="Toggle auto-randomize">
+                </div>
+                <div class="row"><span class="label">Interval (sec)</span> <span class="value" id="val-speed">3</span></div>
+                <input type="range" id="ctrl-speed" min="1" max="10" value="3" aria-label="Adjust randomization speed">
+            </section>
+
+            <!-- Actions -->
+            <footer style="margin-top: 32px;">
+                <button class="btn btn-accent" onclick="triggerRandomize()">Randomize All</button>
+                <button class="btn" onclick="exportWallpaper()">Save 4K Image</button>
+                <button class="btn btn-sm" onclick="resetDefaults()">Reset to Defaults</button>
+            </footer>
+        </div>
+    </aside>
+
+<script>
+/**
+ * 5x7 Bitmap Font Definition
+ */
+const CHAR_MAP = {
+    'A': [0x0E, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x11],
+    'B': [0x1E, 0x11, 0x11, 0x1E, 0x11, 0x11, 0x1E],
+    'C': [0x0E, 0x11, 0x10, 0x10, 0x10, 0x11, 0x0E],
+    'D': [0x1E, 0x11, 0x11, 0x11, 0x11, 0x11, 0x1E],
+    'E': [0x1F, 0x10, 0x10, 0x1E, 0x10, 0x10, 0x1F],
+    'F': [0x1F, 0x10, 0x10, 0x1E, 0x10, 0x10, 0x10],
+    'G': [0x0E, 0x11, 0x10, 0x13, 0x11, 0x11, 0x0E],
+    'H': [0x11, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x11],
+    'I': [0x0E, 0x04, 0x04, 0x04, 0x04, 0x04, 0x0E],
+    'J': [0x07, 0x02, 0x02, 0x02, 0x02, 0x12, 0x0C],
+    'K': [0x11, 0x12, 0x14, 0x18, 0x14, 0x12, 0x11],
+    'L': [0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x1F],
+    'M': [0x11, 0x1B, 0x15, 0x11, 0x11, 0x11, 0x11],
+    'N': [0x11, 0x19, 0x19, 0x15, 0x13, 0x13, 0x11],
+    'O': [0x0E, 0x11, 0x11, 0x11, 0x11, 0x11, 0x0E],
+    'P': [0x1E, 0x11, 0x11, 0x1E, 0x10, 0x10, 0x10],
+    'Q': [0x0E, 0x11, 0x11, 0x11, 0x15, 0x12, 0x0D],
+    'R': [0x1E, 0x11, 0x11, 0x1E, 0x14, 0x12, 0x11],
+    'S': [0x0E, 0x11, 0x10, 0x0E, 0x01, 0x11, 0x0E],
+    'T': [0x1F, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04],
+    'U': [0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x0E],
+    'V': [0x11, 0x11, 0x11, 0x11, 0x11, 0x0A, 0x04],
+    'W': [0x11, 0x11, 0x11, 0x15, 0x15, 0x1B, 0x11],
+    'X': [0x11, 0x11, 0x0A, 0x04, 0x0A, 0x11, 0x11],
+    'Y': [0x11, 0x11, 0x11, 0x0A, 0x04, 0x04, 0x04],
+    'Z': [0x1F, 0x01, 0x02, 0x04, 0x08, 0x10, 0x1F],
+    '0': [0x0E, 0x11, 0x13, 0x15, 0x19, 0x11, 0x0E],
+    '1': [0x04, 0x0C, 0x04, 0x04, 0x04, 0x04, 0x0E],
+    '2': [0x0E, 0x11, 0x01, 0x02, 0x04, 0x08, 0x1F],
+    '3': [0x1F, 0x02, 0x04, 0x02, 0x01, 0x11, 0x0E],
+    '4': [0x02, 0x06, 0x0A, 0x12, 0x1F, 0x02, 0x02],
+    '5': [0x1F, 0x10, 0x1E, 0x01, 0x01, 0x11, 0x0E],
+    '6': [0x06, 0x08, 0x10, 0x1E, 0x11, 0x11, 0x0E],
+    '7': [0x1F, 0x01, 0x02, 0x04, 0x08, 0x08, 0x08],
+    '8': [0x0E, 0x11, 0x11, 0x0E, 0x11, 0x11, 0x0E],
+    '9': [0x0E, 0x11, 0x11, 0x0F, 0x01, 0x02, 0x0C],
+    ' ': [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+    '.': [0x00, 0x00, 0x00, 0x00, 0x00, 0x0C, 0x0C],
+    ',': [0x00, 0x00, 0x00, 0x00, 0x00, 0x0C, 0x04],
+    '!': [0x04, 0x04, 0x04, 0x04, 0x04, 0x00, 0x04],
+    '?': [0x0E, 0x11, 0x01, 0x02, 0x04, 0x00, 0x04],
+    '-': [0x00, 0x00, 0x00, 0x1F, 0x00, 0x00, 0x00],
+    '+': [0x00, 0x04, 0x04, 0x1F, 0x04, 0x04, 0x00],
+    '=': [0x00, 0x00, 0x1F, 0x00, 0x1F, 0x00, 0x00],
+    ':': [0x00, 0x0C, 0x0C, 0x00, 0x0C, 0x0C, 0x00],
+    ';': [0x00, 0x0C, 0x0C, 0x00, 0x0C, 0x04, 0x08],
+    '(': [0x02, 0x04, 0x08, 0x08, 0x08, 0x04, 0x02],
+    ')': [0x08, 0x04, 0x02, 0x02, 0x02, 0x04, 0x08],
+    '*': [0x00, 0x04, 0x15, 0x0E, 0x15, 0x04, 0x00],
+    '@': [0x0E, 0x11, 0x01, 0x0D, 0x15, 0x15, 0x0E],
+    '#': [0x0A, 0x0A, 0x1F, 0x0A, 0x1F, 0x0A, 0x0A],
+    '$': [0x04, 0x0F, 0x14, 0x0E, 0x05, 0x1E, 0x04],
+    '%': [0x19, 0x19, 0x02, 0x04, 0x08, 0x13, 0x13],
+    '&': [0x0C, 0x12, 0x14, 0x08, 0x15, 0x12, 0x0D],
+    '/': [0x01, 0x02, 0x04, 0x08, 0x10, 0x00, 0x00],
+    '\\': [0x10, 0x08, 0x04, 0x02, 0x01, 0x00, 0x00],
+    '"': [0x0A, 0x0A, 0x00, 0x00, 0x00, 0x00, 0x00],
+    "'": [0x04, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00],
+    'UNKNOWN': [0x1F, 0x15, 0x1F, 0x15, 0x1F, 0x15, 0x1F]
+};
+
+// --- APP STATE ---
+
+const state = {
+    text: "TYPE HERE",
+    color: "#00ffcc",
+    bgColor: "#050505",
+    shape: "circle",
+    size: 10,
+    shapeScale: 1.0,
+    spacing: 3,
+    glow: 15,
+    roundness: 0,
+    outline: false,
+    thickness: 2.0,
+    autoRandom: false,
+    speed: 3,
+    alignment: "center", 
+    gridOpacity: 0.1
+};
+
+// --- DOM ELEMENTS ---
+
+const canvas = document.getElementById('main-canvas');
+const ctx = canvas.getContext('2d');
+const wrapper = document.getElementById('canvas-wrapper');
+const input = document.getElementById('hidden-input');
+const hint = document.getElementById('hint');
+const menuBtn = document.getElementById('menu-btn');
+const menu = document.getElementById('config-menu');
+
+const ui = {
+    color: document.getElementById('ctrl-color'),
+    bg: document.getElementById('ctrl-bg'),
+    shape: document.getElementById('ctrl-shape'),
+    align: document.getElementById('ctrl-align'),
+    size: document.getElementById('ctrl-size'),
+    ptScale: document.getElementById('ctrl-pt-scale'),
+    spacing: document.getElementById('ctrl-spacing'),
+    glow: document.getElementById('ctrl-glow'),
+    roundness: document.getElementById('ctrl-round'),
+    outline: document.getElementById('ctrl-outline'),
+    thickness: document.getElementById('ctrl-thickness'),
+    grid: document.getElementById('ctrl-grid'),
+    auto: document.getElementById('ctrl-auto'),
+    speed: document.getElementById('ctrl-speed')
+};
+
+const vals = {
+    size: document.getElementById('val-size'),
+    ptScale: document.getElementById('val-pt-scale'),
+    spacing: document.getElementById('val-spacing'),
+    glow: document.getElementById('val-glow'),
+    round: document.getElementById('val-round'),
+    thickness: document.getElementById('val-thickness'),
+    grid: document.getElementById('val-grid'),
+    speed: document.getElementById('val-speed')
+};
+
+let autoTimer = null;
+let isMenuOpen = false;
+
+// --- INITIALIZATION ---
+
+function init() {
+    resize();
+    randomizeParams(); // Get the "first random" feel
+    bindEvents();
+    
+    // Explicitly hide hint if text is present
+    hint.style.display = state.text.length > 0 ? 'none' : 'block';
+    
+    input.focus();
+    render();
+}
+
+function bindEvents() {
+    window.addEventListener('resize', () => { resize(); render(); });
+    
+    // Input Handling
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && isMenuOpen) toggleMenu(false);
+        else if (!isMenuOpen && e.key.length === 1) input.focus();
+    });
+    
+    document.addEventListener('click', (e) => {
+        const isClickInMenu = menu.contains(e.target) || menuBtn.contains(e.target);
+        if (isMenuOpen && !isClickInMenu) toggleMenu(false);
+        else if (!isMenuOpen && !isClickInMenu) {
+            triggerRandomize();
+            input.focus();
+        }
+    });
+
+    // Clear "TYPE HERE" instantly when the user starts typing for the first time
+    input.addEventListener('keydown', (e) => {
+        if (input.value === "TYPE HERE" && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            input.value = "";
+        }
+    });
+
+    input.addEventListener('input', (e) => {
+        state.text = e.target.value.toUpperCase();
+        hint.style.display = state.text.trim().length > 0 ? 'none' : 'block';
+        render();
+    });
+
+    // Control Binding
+    const bindVal = (el, key, valEl, isFloat=false) => {
+        el.addEventListener('input', (e) => {
+            let v = isFloat ? parseFloat(e.target.value) : e.target.value;
+            if(!isNaN(v) && !isFloat && typeof v !== 'string') v = parseFloat(v);
+            state[key] = v;
+            if(valEl) {
+                if (key === 'shapeScale') valEl.innerText = v.toFixed(1) + 'x';
+                else valEl.innerText = isFloat ? v.toFixed(1) : v;
+            }
+            render();
+            if(key === 'speed') resetAutoTimer();
+        });
+    };
+
+    bindVal(ui.color, 'color');
+    bindVal(ui.bg, 'bgColor');
+    bindVal(ui.shape, 'shape');
+    bindVal(ui.align, 'alignment');
+    bindVal(ui.size, 'size', vals.size, true); 
+    bindVal(ui.ptScale, 'shapeScale', vals.ptScale, true);
+    bindVal(ui.spacing, 'spacing', vals.spacing, true);
+    bindVal(ui.glow, 'glow', vals.glow, true);
+    bindVal(ui.roundness, 'roundness', vals.round);
+    bindVal(ui.thickness, 'thickness', vals.thickness, true);
+    bindVal(ui.grid, 'gridOpacity', vals.grid);
+    bindVal(ui.speed, 'speed', vals.speed);
+
+    ui.outline.addEventListener('change', (e) => {
+        state.outline = e.target.checked;
+        render();
+    });
+
+    ui.bg.addEventListener('input', () => document.body.style.backgroundColor = state.bgColor);
+    
+    ui.auto.addEventListener('change', (e) => {
+        state.autoRandom = e.target.checked;
+        resetAutoTimer();
+    });
+}
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+
+function toggleMenu(forceState) {
+    if (typeof forceState !== 'undefined') isMenuOpen = forceState;
+    else isMenuOpen = !isMenuOpen;
+
+    if (isMenuOpen) {
+        menu.classList.add('open');
+        menuBtn.classList.add('active');
+        menuBtn.setAttribute('aria-expanded', 'true');
+    } else {
+        menu.classList.remove('open');
+        menuBtn.classList.remove('active');
+        menuBtn.setAttribute('aria-expanded', 'false');
+    }
+}
+
+// --- HELPER MATH ---
+function rotatePoint(x, y, cx, cy, rad) {
+    if (rad === 0) return { x, y };
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    const dx = x - cx;
+    const dy = y - cy;
+    return {
+        x: cx + (dx * cos - dy * sin),
+        y: cy + (dx * sin + dy * cos)
+    };
+}
+
+function calculateLayout(maxWidth) {
+    const pixelW = state.size;
+    const gap = state.spacing;
+    const charCols = 5;
+    const charRows = 7;
+    
+    const charDisplayW = (charCols * pixelW) + ((charCols - 1) * gap);
+    const charDisplayH = (charRows * pixelW) + ((charRows - 1) * gap);
+    
+    const letterSpacing = pixelW * 2;
+    const wordSpacing = charDisplayW * 0.8;
+    const lineSpacing = pixelW * 6; 
+
+    const words = state.text.split(' ');
+    const lines = [];
+    let currentLineWords = [];
+    let currentLineWidth = 0;
+    let maxLineW = 0;
+
+    words.forEach(word => {
+        let wordW = 0;
+        for(let i=0; i<word.length; i++) wordW += charDisplayW + letterSpacing;
+        wordW -= letterSpacing;
+
+        if (currentLineWords.length > 0 && currentLineWidth + wordSpacing + wordW > maxWidth) {
+            lines.push({ words: currentLineWords, width: currentLineWidth });
+            if (currentLineWidth > maxLineW) maxLineW = currentLineWidth;
+            currentLineWords = [];
+            currentLineWidth = 0;
+        }
+
+        if (currentLineWords.length > 0) currentLineWidth += wordSpacing;
+        currentLineWords.push({ text: word, width: wordW });
+        currentLineWidth += wordW;
+    });
+    
+    if (currentLineWords.length > 0) {
+        lines.push({ words: currentLineWords, width: currentLineWidth });
+        if (currentLineWidth > maxLineW) maxLineW = currentLineWidth;
+    }
+    
+    const totalH = (lines.length * charDisplayH) + ((lines.length - 1) * lineSpacing);
+    return { lines, totalH, maxLineW, charDisplayH, lineSpacing, charDisplayW, letterSpacing, wordSpacing, pixelW, gap };
+}
+
+// --- RENDERING ENGINE ---
+
+function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    document.body.style.backgroundColor = state.bgColor;
+    
+    if (state.gridOpacity > 0) drawGrid();
+    if (!state.text || state.text.length === 0) return;
+
+    let layoutWidth = Math.min(canvas.width * 0.9, 2000);
+    let layout = calculateLayout(layoutWidth);
+    
+    const screenW = canvas.width;
+    const screenH = canvas.height;
+    
+    const vScale = (screenH * 0.9) / layout.totalH;
+    const hScale = (screenW * 0.9) / layout.maxLineW;
+    
+    let scale = Math.min(1, vScale, hScale);
+
+    ctx.save();
+    ctx.translate(canvas.width/2, canvas.height/2);
+    ctx.scale(scale, scale);
+    ctx.translate(0, -layout.totalH/2);
+    
+    const { lines, pixelW, gap, charDisplayW, letterSpacing, wordSpacing } = layout;
+    const points = [];
+
+    let currentY = 0;
+
+    lines.forEach(line => {
+        let startX = 0;
+        let extraSpace = 0;
+
+        if (state.alignment === 'center') startX = -line.width / 2;
+        else if (state.alignment === 'right') startX = (canvas.width * 0.45)/scale - line.width; 
+        else if (state.alignment === 'left') startX = -(canvas.width * 0.45)/scale;
+        else if (state.alignment === 'justify') {
+            startX = -(canvas.width * 0.45)/scale;
+            if (line.words.length > 1) {
+                const availableSpace = ((canvas.width * 0.9)/scale) - line.width;
+                extraSpace = availableSpace / (line.words.length - 1);
+            }
+        }
+
+        line.words.forEach((wordObj, wIndex) => {
+            let charX = startX;
+            for(let i=0; i<wordObj.text.length; i++) {
+                const char = wordObj.text[i];
+                const bitmap = CHAR_MAP[char] || CHAR_MAP['UNKNOWN'];
+                
+                for (let r = 0; r < 7; r++) {
+                    const rowData = bitmap[r];
+                    for (let c = 0; c < 5; c++) {
+                        if ((rowData >> (4 - c)) & 1) {
+                            const x = charX + c * (pixelW + gap);
+                            let y = currentY + r * (pixelW + gap);
+                            points.push({ x, y });
+                        }
+                    }
+                }
+                charX += charDisplayW + letterSpacing;
+            }
+            startX += wordObj.width + wordSpacing + extraSpace;
+        });
+
+        currentY += layout.charDisplayH + layout.lineSpacing;
+    });
+
+    ctx.shadowColor = state.color;
+    ctx.shadowBlur = state.glow;
+    ctx.globalAlpha = 1.0; 
+    
+    if (state.outline || state.shape === 'ring') {
+        ctx.strokeStyle = state.color;
+        ctx.lineWidth = state.thickness;
+    } else {
+        ctx.fillStyle = state.color;
+    }
+
+    ctx.beginPath();
+    
+    const s = state.size * state.shapeScale; 
+    const r = s/2;
+    const offset = (state.size / 2) - r;
+
+    const drawPoly = (cx, cy, radius, sides, rotOffset=0) => {
+        for (let i = 0; i < sides; i++) {
+            const angle = (Math.PI * 2 / sides) * i + rotOffset;
+            const px = cx + radius * Math.cos(angle);
+            const py = cy + radius * Math.sin(angle);
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+    };
+
+    points.forEach(p => {
+         const drawX = p.x + offset;
+         const drawY = p.y + offset;
+         const cx = drawX + r;
+         const cy = drawY + r;
+
+         if (state.shape === 'circle') {
+            ctx.moveTo(drawX + s, cy); 
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+         } else if (state.shape === 'square') {
+             if (state.roundness > 0) {
+                 const rad = (state.roundness/100) * r;
+                 ctx.moveTo(drawX + rad, drawY);
+                 ctx.arcTo(drawX + s, drawY, drawX + s, drawY + s, rad);
+                 ctx.arcTo(drawX + s, drawY + s, drawX, drawY + s, rad);
+                 ctx.arcTo(drawX, drawY + s, drawX, drawY, rad);
+                 ctx.arcTo(drawX, drawY, drawX + s, drawY, rad);
+             } else {
+                 ctx.rect(drawX, drawY, s, s);
+             }
+         } else if (state.shape === 'diamond') {
+             ctx.moveTo(cx, drawY); ctx.lineTo(drawX + s, cy); ctx.lineTo(cx, drawY + s); ctx.lineTo(drawX, cy); ctx.lineTo(cx, drawY);
+         } else if (state.shape === 'triangle') {
+             ctx.moveTo(drawX + r, drawY); ctx.lineTo(drawX + s, drawY + s); ctx.lineTo(drawX, drawY + s); ctx.lineTo(drawX + r, drawY);
+         } else if (state.shape === 'pentagon') {
+             drawPoly(cx, cy, r, 5, -Math.PI/2); 
+         } else if (state.shape === 'hexagon') {
+             drawPoly(cx, cy, r, 6);
+         } else if (state.shape === 'octagon') {
+             drawPoly(cx, cy, r, 8, Math.PI/8); 
+         } else if (state.shape === 'star') {
+            const outR = r;
+            const inR = r * 0.5;
+            let rot = (Math.PI / 2 * 3);
+            let step = Math.PI / 5; 
+            const startX = cx + Math.cos(rot) * outR;
+            const startY = cy + Math.sin(rot) * outR;
+            ctx.moveTo(startX, startY);
+            for (let i = 0; i < 5; i++) {
+                ctx.lineTo(cx + Math.cos(rot) * outR, cy + Math.sin(rot) * outR);
+                rot += step;
+                ctx.lineTo(cx + Math.cos(rot) * inR, cy + Math.sin(rot) * inR);
+                rot += step;
+            }
+            ctx.lineTo(startX, startY);
+         } else if (state.shape === 'x' || state.shape === 'plus' || state.shape === 'cross') {
+             const t = s/3;
+             if (state.shape === 'x') {
+                const drawRotRect = (ang) => {
+                    const c = Math.cos(ang), si = Math.sin(ang);
+                    const w = s * 1.2, h = s/5;
+                    const corners = [{x: -w/2, y: -h/2}, {x: w/2, y: -h/2}, {x: w/2, y: h/2}, {x: -w/2, y: h/2}];
+                    corners.forEach((co, i) => {
+                        const rx = cx + (co.x * c - co.y * si);
+                        const ry = cy + (co.x * si + co.y * c);
+                        if(i===0) ctx.moveTo(rx, ry); else ctx.lineTo(rx, ry);
+                    });
+                    ctx.closePath();
+                };
+                drawRotRect(Math.PI/4);
+                drawRotRect(-Math.PI/4);
+             } else {
+                ctx.rect(drawX, drawY + t, s, t);
+                ctx.rect(drawX + t, drawY, t, s);
+             }
+         } else if (state.shape === 'ring') {
+             ctx.moveTo(drawX + s, cy);
+             ctx.arc(cx, cy, r, 0, Math.PI * 2);
+         } else if (state.shape === 'heart') {
+            const x = drawX, y = drawY;
+            const w = s, h = s;
+            const topCurveHeight = h * 0.3;
+            ctx.moveTo(x + w / 2, y + h * 0.2);
+            ctx.bezierCurveTo(x + w / 2, y, x, y, x, y + topCurveHeight);
+            ctx.bezierCurveTo(x, y + (h + topCurveHeight) / 2, x + w / 2, y + h, x + w / 2, y + h);
+            ctx.bezierCurveTo(x + w / 2, y + h, x + w, y + (h + topCurveHeight) / 2, x + w, y + topCurveHeight);
+            ctx.bezierCurveTo(x + w, y, x + w / 2, y, x + w / 2, y + h * 0.2);
+         }
+    });
+
+    if (state.outline || state.shape === 'ring') ctx.stroke();
+    else ctx.fill();
+    
+    ctx.restore();
+}
+
+function drawGrid() {
+    const gridSize = 50;
+    ctx.beginPath();
+    ctx.strokeStyle = state.color;
+    ctx.globalAlpha = state.gridOpacity;
+    ctx.lineWidth = 1;
+
+    for (let x = 0; x <= canvas.width; x += gridSize) {
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+    }
+    for (let y = 0; y <= canvas.height; y += gridSize) {
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+    }
+    ctx.stroke();
+    ctx.globalAlpha = 1.0; 
+}
+
+// --- FEATURES ---
+
+function triggerRandomize() {
+    wrapper.style.opacity = 0;
+    setTimeout(() => {
+        randomizeParams();
+        render();
+        wrapper.style.opacity = 1;
+    }, 200);
+}
+
+function randomizeParams() {
+    const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+    const randArr = (arr) => arr[Math.floor(Math.random() * arr.length)];
+    const randColor = () => '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+
+    state.color = randColor();
+    state.bgColor = randArr(['#050505', '#110505', '#051105', '#050511', '#1a1a1a', '#000000']);
+    state.shape = randArr(['circle', 'square', 'diamond', 'triangle', 'pentagon', 'hexagon', 'octagon', 'cross', 'x', 'plus', 'ring', 'star', 'heart']);
+    state.alignment = randArr(['left', 'center', 'right']); 
+    state.size = randInt(4, 20);
+    state.shapeScale = Math.random() * 1.0 + 0.5;
+    state.spacing = randInt(1, 10);
+    state.glow = randInt(5, 50);
+    state.roundness = randInt(0, 50);
+    state.gridOpacity = Math.random() < 0.4 ? Math.random() * 0.3 : 0; 
+    state.outline = Math.random() > 0.7; 
+    state.thickness = randInt(1, 4);
+
+    // Update UI
+    ui.color.value = state.color;
+    ui.bg.value = state.bgColor;
+    ui.shape.value = state.shape;
+    ui.align.value = state.alignment;
+    ui.size.value = state.size;
+    ui.ptScale.value = state.shapeScale;
+    ui.spacing.value = state.spacing;
+    ui.glow.value = state.glow;
+    ui.roundness.value = state.roundness;
+    ui.grid.value = state.gridOpacity;
+    ui.outline.checked = state.outline;
+    ui.thickness.value = state.thickness;
+
+    // Update Text Labels
+    vals.size.innerText = state.size;
+    vals.ptScale.innerText = state.shapeScale.toFixed(1) + 'x';
+    vals.spacing.innerText = state.spacing;
+    vals.glow.innerText = state.glow;
+    vals.round.innerText = state.roundness;
+    vals.grid.innerText = (state.gridOpacity * 100).toFixed(0) + '%';
+    vals.thickness.innerText = state.thickness.toFixed(1);
+}
+
+function resetDefaults() {
+    state.color = "#00ffcc";
+    state.bgColor = "#050505";
+    state.shape = "circle";
+    state.alignment = "center";
+    state.size = 8;
+    state.shapeScale = 1.0;
+    state.spacing = 3;
+    state.glow = 15;
+    state.roundness = 0;
+    state.gridOpacity = 0.1;
+    state.outline = false;
+    state.thickness = 2.0;
+
+    ui.color.value = state.color;
+    ui.bg.value = state.bgColor;
+    ui.shape.value = state.shape;
+    ui.align.value = state.alignment;
+    ui.size.value = state.size;
+    ui.ptScale.value = state.shapeScale;
+    ui.spacing.value = state.spacing;
+    ui.glow.value = state.glow;
+    ui.roundness.value = state.roundness;
+    ui.grid.value = state.gridOpacity;
+    ui.outline.checked = state.outline;
+    ui.thickness.value = state.thickness;
+    
+    vals.size.innerText = "8";
+    vals.ptScale.innerText = "1.0x";
+    vals.spacing.innerText = "3";
+    vals.glow.innerText = "15";
+    vals.round.innerText = "0";
+    vals.grid.innerText = "10%";
+    vals.thickness.innerText = "2.0";
+
+    render();
+}
+
+function resetAutoTimer() {
+    if (autoTimer) clearInterval(autoTimer);
+    if (state.autoRandom) {
+        autoTimer = setInterval(() => triggerRandomize(), state.speed * 1000);
+    }
+}
+
+function exportWallpaper() {
+    const prevW = canvas.width;
+    const prevH = canvas.height;
+    canvas.width = 3840;
+    canvas.height = 2160;
+    render();
+    const link = document.createElement('a');
+    link.download = `gen-type-${Date.now()}.png`;
+    link.href = canvas.toDataURL('image/png', 1.0);
+    link.click();
+    canvas.width = prevW;
+    canvas.height = prevH;
+    render();
+}
+
+init();
+</script>
+</body>
+</html>
